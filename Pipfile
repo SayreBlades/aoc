@@ -7,6 +7,10 @@ name = "pypi"
 numpy = "*"
 bitstring = "*"
 tqdm = "*"
+dask = "*"
+distributed = "*"
+bokeh = "*"
+numba = "*"
 
 [dev-packages]
 jupyter = "*"
