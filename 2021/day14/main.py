@@ -1,5 +1,9 @@
 import os
-from collections import Counter
+from collections import defaultdict
+
+from numba import njit
+from tqdm import tqdm
+
 
 HERE = os.path.dirname(__file__)
 TEST_FILE = os.path.join(HERE, 'input_test.txt')
@@ -13,33 +17,35 @@ def get_data(fname):
         return poly, rules
 
 
-def genit(poly, rules):
-    for i in range(len(poly)):
-        cur_char = poly[i]
-        yield cur_char
-        if i+1 >= len(poly):
-            return
-        next_char = poly[i+1]
-        found_char = rules.get(f'{cur_char}{next_char}')
-        if found_char:
-            yield found_char
-
-
 def part1(fname, iters=1):
     poly, rules = get_data(fname)
+    pairs = defaultdict(lambda: 0)
+    for i, ch in enumerate(poly):
+        if i + 1 < len(poly):
+            pairs[ch+poly[i+1]] += 1
     for _ in range(iters):
-        poly = list(genit(poly, rules))
-    char_freq = Counter(poly)
-    min_char = max_char = None
-    for k, v in char_freq.items():
-        if not min_char or v < min_char[1]:
-            min_char = (k, v)
-        if not max_char or v > max_char[1]:
-            max_char = (k, v)
-    return max_char[1] - min_char[1]
+        new_pairs = defaultdict(lambda: 0)
+        for k, v in pairs.items():
+            rule = rules.get(k)
+            if not rule:
+                new_pairs[k] = v
+            else:
+                new_pairs[k[0]+rule] += v
+                new_pairs[rule+k[1]] += v
+        pairs = new_pairs
+    counts = defaultdict(lambda: 0)
+    for k, v in pairs.items():
+        counts[k[0]] += v
+        counts[k[1]] += v
+    counts[poly[0]] += 1
+    counts[poly[-1]] += 1
+    return (max(counts.values()) - min(counts.values())) // 2
+
 
 
 if __name__ == '__main__':
     # print(get_data(TEST_FILE))
     print(part1(TEST_FILE, iters=10))  # 1588
     print(part1(DATA_FILE, iters=10))  # 2223
+    print(part1(TEST_FILE, iters=40))  # 2188189693529
+    print(part1(DATA_FILE, iters=40))  # 2566282754493
